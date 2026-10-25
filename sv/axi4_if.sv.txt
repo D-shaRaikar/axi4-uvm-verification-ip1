@@ -1,0 +1,63 @@
+// -----------------------------------------------------------------
+// AXI4 Interface & SVA Assertions
+// -----------------------------------------------------------------
+interface axi4_if (input logic clk, input logic rst_n);
+
+  // Write Channels (AW, W, B)
+  logic [3:0]  awid;
+  logic [31:0] awaddr;
+  logic [7:0]  awlen;
+  logic [2:0]  awsize;
+  logic [1:0]  awburst;
+  logic        awvalid;
+  logic        awready;
+  
+  logic [31:0] wdata;
+  logic [3:0]  wstrb;
+  logic        wlast;
+  logic        wvalid;
+  logic        wready;
+  
+  logic [3:0]  bid;
+  logic [1:0]  bresp;
+  logic        bvalid;
+  logic        bready;
+
+  // Read Channels (AR, R)
+  logic [3:0]  arid;
+  logic [31:0] araddr;
+  logic [7:0]  arlen;
+  logic [2:0]  arsize;
+  logic [1:0]  arburst;
+  logic        arvalid;
+  logic        arready;
+  
+  logic [3:0]  rid;
+  logic [31:0] rdata;
+  logic [1:0]  rresp;
+  logic        rlast;
+  logic        rvalid;
+  logic        rready;
+
+  // -----------------------------------------------------------------
+  // SystemVerilog Assertions (SVA) for Protocol Compliance
+  // -----------------------------------------------------------------
+  property p_awvalid_stable;
+    @(posedge clk) disable iff (!rst_n)
+    (awvalid && !awready) |=> (awvalid);
+  endproperty
+  assert property (p_awvalid_stable) else $error("[AXI4_SVA] AWVALID dropped prematurely!");
+
+  property p_arvalid_stable;
+    @(posedge clk) disable iff (!rst_n)
+    (arvalid && !arready) |=> (arvalid);
+  endproperty
+  assert property (p_arvalid_stable) else $error("[AXI4_SVA] ARVALID dropped prematurely!");
+
+  property p_rvalid_stable;
+    @(posedge clk) disable iff (!rst_n)
+    (rvalid && !rready) |=> (rvalid);
+  endproperty
+  assert property (p_rvalid_stable) else $error("[AXI4_SVA] RVALID dropped prematurely!");
+
+endinterface

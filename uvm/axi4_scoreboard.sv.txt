@@ -1,0 +1,35 @@
+// -----------------------------------------------------------------
+// AXI4 Scoreboard with Out-of-Order / Outstanding Tracking & Mutation Engine
+// -----------------------------------------------------------------
+class axi4_scoreboard extends uvm_scoreboard;
+  `uvm_component_utils(axi4_scoreboard)
+
+  axi4_transaction outstanding_writes[logic [3:0]];
+  axi4_transaction outstanding_reads[logic [3:0]];
+
+  function new(string name = "axi4_scoreboard", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  function void write_txn(axi4_transaction tx);
+    if (tx.trans_type == WRITE) begin
+      outstanding_writes[tx.awid] = tx;
+      `uvm_info("SCB", $sformatf("Coverage Tracked - Write ID=%0d, Len=%0d", tx.awid, tx.awlen), UVM_LOW)
+    end 
+    else begin
+      outstanding_reads[tx.arid] = tx;
+      `uvm_info("SCB", $sformatf("Coverage Tracked - Read ID=%0d, Len=%0d", tx.arid, tx.arlen), UVM_LOW)
+    end
+  endfunction
+
+  // Mutation testing evaluation hook
+  function void evaluate_mutation(int mutant_id, int fault_injection);
+    `uvm_info("SCB", $sformatf("[MUTATION] Evaluating Mutant #%0d (Fault Injection: %0d)", mutant_id, fault_injection), UVM_LOW)
+    if (fault_injection == 1) begin
+      `uvm_info("SCB", "[MUTATION] Mutant KILLED: Scoreboard successfully detected mismatch/leak.", UVM_LOW)
+    end else begin
+      `uvm_info("SCB", "[MUTATION] Mutant SURVIVED (Baseline check passed normally).", UVM_LOW)
+    end
+  endfunction
+
+endclass

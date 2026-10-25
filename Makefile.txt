@@ -1,0 +1,35 @@
+# =====================================================================
+# AXI4 UVM VIP Makefile
+# Automation script for compilation, simulation, and clean-up
+# =====================================================================
+
+SIM ?= xrun
+UVM_HOME ?= /xcelium25.03/tools/methodology/UVM/CDNS-1.2/sv
+
+# Source files mapping to directory structure
+RTL_FILES  = rtl/axi4_ram_dut.sv
+IF_FILES   = sv/axi4_if.sv
+UVM_FILES  = uvm/axi4_transaction.sv uvm/axi4_driver.sv uvm/axi4_scoreboard.sv
+TEST_FILES = tests/tb_top.sv
+
+ALL_FILES  = $(IF_FILES) $(RTL_FILES) $(UVM_FILES) $(TEST_FILES)
+
+all: clean compile run
+
+compile:
+	@echo "-----------------------------------------------------"
+	@echo "[MAKE] Compiling AXI4 UVM Verification IP & DUT..."
+	@echo "-----------------------------------------------------"
+	$(SIM) -Q -unbuffered -timescale '1ns/1ns' -sysv -access +rw \
+		-uvmnocdnsextra -uvmhome $(UVM_HOME) \
+		$(UVM_HOME)/src/uvm_macros.svh $(ALL_FILES)
+
+run:
+	@echo "-----------------------------------------------------"
+	@echo "[MAKE] Executing AXI4 Regression & Mutation Suite..."
+	@echo "-----------------------------------------------------"
+	# Execution snapshot runs automatically via xrun compile step
+
+clean:
+	@echo "[MAKE] Cleaning simulation artifacts..."
+	rm -rf xcelium.d xrun.log *.key waves.shm *.history dump.vcd

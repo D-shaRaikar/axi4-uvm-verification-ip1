@@ -1,0 +1,30 @@
+// -----------------------------------------------------------------
+// Simple AXI4 RAM Memory Model (DUT)
+// -----------------------------------------------------------------
+module axi4_ram_dut (
+  axi4_if vif
+);
+
+  // Memory array: 1024 words of 32-bit
+  logic [31:0] mem [0:1023];
+
+  always_ff @(posedge vif.clk or negedge vif.rst_n) begin
+    if (!vif.rst_n) begin
+      vif.awready <= 1'b1;
+      vif.wready  <= 1'b1;
+      vif.bvalid  <= 1'b0;
+      vif.arready <= 1'b1;
+      vif.rvalid  <= 1'b0;
+    end else begin
+      // Simple handshake responses for simulation
+      if (vif.awvalid && vif.awready) begin
+        vif.bid    <= vif.awid;
+        vif.bvalid <= 1'b1;
+        vif.bresp  <= 2'b00; // OKAY response
+      end else if (vif.bready && vif.bvalid) begin
+        vif.bvalid <= 1'b0;
+      end
+    end
+  end
+
+endmodule

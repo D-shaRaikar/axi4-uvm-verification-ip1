@@ -1,0 +1,90 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
+// Named Enum Definition for Transaction Type
+typedef enum logic {
+  WRITE = 1'b0, 
+  READ  = 1'b1
+} trans_type_enum_e;
+
+// Transaction Class with Functional Coverage
+class axi4_transaction extends uvm_sequence_item;
+
+  rand trans_type_enum_e     trans_type;
+  rand logic [3:0]           awid;      
+       logic [3:0]           bid;       
+  rand logic [31:0]          awaddr;
+  rand logic [7:0]           awlen;
+  rand logic [2:0]           awsize;
+  rand logic [1:0]           awburst;
+  rand logic [31:0]          wdata[];
+  rand logic [3:0]           wstrb[];
+       logic [1:0]           bresp;
+
+  rand logic [3:0]           arid;
+       logic [3:0]           rid;
+  rand logic [31:0]          araddr;
+  rand logic [7:0]           arlen;
+  rand logic [2:0]           arsize;
+  rand logic [1:0]           arburst;
+       logic [31:0]          rdata[];
+       logic [1:0]           rresp[];
+
+  constraint c_ids    { awid inside {[0:15]}; arid inside {[0:15]}; }
+  constraint c_lens   { awlen inside {[0:15]}; arlen inside {[0:15]}; }
+  constraint c_sizes  { awsize == 3'b010; arsize == 3'b010; }
+  constraint c_bursts { awburst inside {[0:2]}; arburst inside {[0:2]}; }
+  
+  constraint c_data_len { 
+    wdata.size() == (awlen + 1);
+    wstrb.size() == (awlen + 1);
+  }
+  
+  constraint c_wstrb {
+    foreach(wstrb[i]) wstrb[i] == 4'b1111;
+  }
+
+  // Covergroup for AXI4 Protocol Functional Coverage
+  covergroup axi4_cov;
+    option.per_instance = 1;
+
+    cp_trans_type: covergroup trans_type {
+      bins writes = {WRITE};
+      bins reads  = {READ};
+    }
+
+    cp_awlen: coverpoint awlen {
+      bins single   = {0};
+      bins burst_4  = {3};
+      bins burst_8  = {7};
+      bins burst_16 = {15};
+      bins others   = default;
+    }
+
+    cp_awburst: coverpoint awburst {
+      bins fixed = {2'b00};
+      bins incr  = {2'b01};
+      bins wrap  = {2'b10};
+    }
+
+    cross cp_trans_type, cp_awlen;
+  endgroup
+
+  `uvm_object_utils_begin(axi4_transaction)
+    `uvm_field_enum(trans_type_enum_e, trans_type, UVM_ALL_ON)
+    `uvm_field_int(awid,   UVM_ALL_ON)
+    `uvm_field_int(arid,   UVM_ALL_ON)
+    `uvm_field_int(awaddr, UVM_ALL_ON)
+    `uvm_field_int(araddr, UVM_ALL_ON)
+  `uvm_object_utils_end
+
+  function new(string name = "axi4_transaction");
+    super.new(name);
+    axi4_cov = new();
+  endfunction
+
+  function void sample_coverage();
+    axi4_cov.sample();
+  endfunction
+
+endclass
